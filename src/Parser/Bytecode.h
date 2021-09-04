@@ -1,5 +1,13 @@
 #pragma once
 
+#include "Instruction.h"
+
+#include <memory>
+#include <utility>
+#include <vector>
+
+using namespace wasmrt::parser::type;
+
 namespace wasmrt {
 namespace parser {
 namespace bytecode {
@@ -185,7 +193,7 @@ enum BytecodeOp {
 	TruncSat          = 0xFC // <i32|64>.trunc_sat_<f32|64>_<s|u>
 };
 
-const char *OpNames[TruncSat + 1] = {
+static const char *OpNames[TruncSat + 1] = {
 	[Unreachable] = "unreachable",
 	[Nop] = "nop",
 	[Block] = "block",
@@ -364,6 +372,63 @@ const char *OpNames[TruncSat + 1] = {
 	[I64Extend16S] = "i64.extend16_s",
 	[I64Extend32S] = "i64.extend32_s",
 	[TruncSat] = "trunc_sat"
+};
+
+class Instruction {
+public:
+	Instruction(BytecodeOp opcode) : opcode(opcode) {}
+
+    inline BytecodeOp getOpcode() const { return opcode; }
+	inline const char *getOpName() const { return OpNames[opcode]; }
+
+    const BytecodeOp opcode;
+};
+
+using Expr = std::vector<std::unique_ptr<Instruction>>;
+
+class BytecodeInst : public Instruction {
+public:
+	BytecodeInst(BytecodeOp opcode): Instruction(opcode) {}
+
+	BytecodeInst(BytecodeOp opcode, uint64_t Arg)
+		: Instruction(opcode), Arg(Arg) {}
+
+	uint64_t Arg;
+}
+
+class MemoryInst : public Instruction {
+public:
+	MemoryInst(BytecodeOp opcode, uint32_t Align, uint32_t Offset)
+		: Instruction(opcode), Align(Align), Offset(Offset) {}
+
+	uint32_t Align, Offset;
+};
+
+class BlockInst : public Instruction {
+public:
+	BlockInst(BytecodeOp opcode, BlockType Type, Expr &&Instructions)
+		: Instruction(opcode), Type(Type), Instructions(std::move(Instructions)) {}
+
+	BlockType Type;
+	Expr	  Instructions;
+};
+
+class IfInst : public Instruction {
+public:
+	IfInst(BlockType Type, Expr &&IfTrue, Expr &&IfFalse)
+		: Instruction(If), Type(Type), IfTrue(IfTrue), IfFalse(IfFalse) {}
+
+	BlockType Type;
+	Expr	  IfTrue;
+	Expr	  IfFalse;
+};
+
+class BrTableInst : public Instruction {
+public:
+	BrTableInst(std::vector<LabelIdx> &&Labels)
+		: Instruction(BrTable), Labels(std::move(Labels)) {}
+
+	std::vector<LabelIdx> Labels;
 };
 
 } // namespace bytecode

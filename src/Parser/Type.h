@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Support/Error.h"
+#include "Support/Output.h"
 
 #include <functional>
 #include <string>
@@ -11,6 +11,14 @@ using namespace wasmrt;
 namespace wasmrt {
 namespace parser {
 namespace type {
+
+using TypeIdx   = uint32_t;
+using FuncIdx   = uint32_t;
+using TableIdx  = uint32_t;
+using MemIdx    = uint32_t;
+using GlobalIdx = uint32_t;
+using LocalIdx  = uint32_t;
+using LabelIdx  = uint32_t;
 
 using ValType   = uint8_t;  
 using BlockType = int32_t;
@@ -39,7 +47,7 @@ static const char *ValTypeToStr(ValType Type) {
         case ValTypeF32: return "f32";
         case ValTypeF64: return "f64";
         default:
-            support::error::Error("ValTypeToStr", "Invalid ValType: %s!\n", Type);
+            support::output::Error("ValTypeToStr", "Invalid ValType: %d!\n", (int) Type);
 	}
     return nullptr; // unreachable.
 }

@@ -1,22 +1,18 @@
 #pragma once
 
-#include "Instruction.h"
+#include "Bytecode.h"
+#include "Type.h"
 
 #include <string>
 #include <vector>
+
+using namespace wasmrt::parser::type;
 
 namespace wasmrt {
 namespace parser {
 namespace module {
 
-using TypeIdx   = uint32_t;
-using FuncIdx   = uint32_t;
-using TableIdx  = uint32_t;
-using MemIdx    = uint32_t;
-using GlobalIdx = uint32_t;
-using LocalIdx  = uint32_t;
-using LabelIdx  = uint32_t;
-using Expr 		= std::vector<wasmrt::parser::instruction::Instruction>;
+using Expr = wasmrt::parser::bytecode::Expr;
 
 inline constexpr uint32_t MagicNumber    = 0x6D736100;
 inline constexpr uint32_t SupportVersion = 0x00000001;
