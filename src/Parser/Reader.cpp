@@ -1,9 +1,12 @@
 #include "Support/Output.h"
 #include "Reader.h"
 
+#include <bit>
 #include <ifstream>
 #include <string>
+#include <type_traits>
 #include <tuple>
+#include <utility>
 
 using namespace wasmrt;
 
@@ -55,14 +58,16 @@ decodeVarInt(const SimpleBuffer& SB, size_t Start, size_t Bits) {
     return {0, 0};    
 }
 
-template <typename T>
-static T trans(T Val) {
-    T Result;
-    int Size = sizeof(T);
-    uint8_t *Dst = reinterpret_cast<uint8_t*>(&Result);
-    uint8_t *Src = reinterpret_cast<uint8_t*>(&Val) + Size - 1;
-    for (auto *End = Dst + Size; Dst != End; ++Dst) *Dst = *Src--;
-    return Result;
+template<class U, size_t... N>
+U bswap_impl(U Val, std::index_sequence<N...>) {
+  return (((Val >> (N << 3) & 0xff) << (sizeof(T)-1-N) << 3) | ...);
+}
+
+template<typename T,
+	 typename U = std::conditonal<sizeof(T) == 4, uint32_t, uint64_t>::value>
+T bswap(T Val) {
+  return *reinterpret_cast<T*>(bswap_impl<U>(
+	*reinterpret_cast<U*>(Val), std::make_index_sequence<sizeof(U)>{}));
 }
 
 template <bool translate = false>
@@ -71,9 +76,9 @@ public:
     ModuleParser(const SimpleBuffer &SB) : SB(SB) {}
 
     inline size_t remaining() const { return SB.Size - Idx; }
-    float transF32(float f) { return translate ? f : trans(f); }
-    uint32_t transU32(uint32_t u) { return translate ? u : trans(u); }
-    double transF64(double d) { return translate ? d : trans(d); }
+    float transF32(float f) { return translate ? f : bswap(f); }
+    uint32_t transU32(uint32_t u) { return translate ? u : bswap(u); }
+    double transF64(double d) { return translate ? d : bswap(d); }
 
     uint8_t readByte();
     uint32_t readU32();
@@ -133,9 +138,8 @@ Module *ModuleParser::parse() {
 }
 
 Module *ReadFromBuffer(SimpleBuffer &SB) {
-    constexpr uint16_t mf = 0x1234;
-    constexpr bool translate = *reinterpret_cast<uint8_t*>(&mf) == 0x12;
-    return ModuleParser<translate>(SB).parse();
+    constexpr bool translate = std::endian::native == std::endian::big;
+    return ModuleParser<translate>(SB).parse()
 }
 
 Module *ReadFromFile(const std::string FileName) {
