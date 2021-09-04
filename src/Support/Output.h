@@ -15,9 +15,10 @@ void Error(const char *Function, const char *Format, Types... Args) {
 }
 
 template <typename... Types>
-void Note(const char *Function, const char *Format, Types... Args) {
+void Log(const char *Function, const char *Format, Types... Args) {
     printf("%s: ", Function);
     printf(Format, Args...);
+    printf("\n");
 }
 
 } // namespace output

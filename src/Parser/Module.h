@@ -4,6 +4,7 @@
 #include "Type.h"
 
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace wasmrt::parser::type;
@@ -49,6 +50,19 @@ enum ExportTag {
 };
 
 struct CustomSec {
+	CustomSec(std::string &&Name, uint8_t *Bytes)
+		: Name(std::move(Name)), Bytes(Bytes) {}
+
+	CustomSec(CustomSec &&Other)
+		: Name(std::move(Other.Name)), Bytes(Other.Bytes) {
+		Other.Bytes = nullptr;
+	}
+
+	~CustomSec() {
+		if (Bytes != nullptr)
+			delete[] Bytes;
+	}
+
 	std::string  Name;
 	uint8_t*	 Bytes;
 };
@@ -58,15 +72,19 @@ struct ImportDesc {
 	union {
 		TypeIdx    FuncType;  	// tag = 0
 		TableType  Table;		// tag = 1
-		MemType    Mem;      	// tag=2
-		GlobalType Global;   	// tag=3
+		MemType    Mem;      	// tag = 2
+		GlobalType Global;   	// tag = 3
 	} Idx;
 };
 
 struct Import {
-	std::string   			 Module;
-	std::string   			 Name;
-	std::vector<ImportDesc>  Desc;
+	Import(Import &&Other)
+		: Module(std::move(Other.Module)),
+		  Name(std::move(Other.Name)), Desc(Desc) {}
+
+	std::string  Module;
+	std::string  Name;
+	ImportDesc   Desc;
 };
 
 struct Global {
@@ -86,8 +104,8 @@ struct ExportDesc {
 
 struct Elem {
 	TableIdx              Table;
-	std::vector<FuncIdx>  Init;
 	Expr                  Offset;
+	std::vector<FuncIdx>  Init;
 };
 
 struct Locals {
@@ -102,8 +120,8 @@ struct Code {
 
 struct Data {
 	MemIdx  			  Mem;
-	std::vector<uint8_t>  Init;
 	Expr    			  Offset;
+	std::vector<uint8_t>  Init;
 };
 
 struct Module {

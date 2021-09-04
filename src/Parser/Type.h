@@ -53,9 +53,14 @@ static const char *ValTypeToStr(ValType Type) {
 }
 
 struct FuncType {
-	uint8_t               Tag;
-	std::vector<ValType>  ParamTypes;
-	std::vector<ValType>  ResultTypes;
+    FuncType(uint8_t Tag,
+        std::vector<ValType> &&ParamTypes,
+        std::vector<ValType> &&ResultTypes)
+        : Tag(Tag), ParamTypes(std::move(ParamTypes)), ResultTypes(std::move(ResultTypes)) {}
+
+    FuncType(FuncType &&Other)
+        : Tag(Other.Tag), ParamTypes(std::move(Other.ParamTypes)),
+          ResultTypes(std::move(Other.ResultTypes)) {}
 
     bool equals(const FuncType &other) const {
         if (ParamTypes.size() != other.ParamTypes.size())
@@ -93,30 +98,34 @@ struct FuncType {
     }
 
     inline std::string str() const { return getSignature(); }
+
+	uint8_t               Tag;
+	std::vector<ValType>  ParamTypes;
+	std::vector<ValType>  ResultTypes;
 };
 
 struct RangeType {
-	uint8_t  Tag;
-	uint32_t Min;
-	uint32_t Max;
-
     std::string str() const {
         std::string str("{min: ");
         str.append(Min).append(", max: ").append(Max).append('}');
         return str;
     }
+
+	uint8_t  Tag;
+	uint32_t Min;
+	uint32_t Max;
 };
 
 using MemType = RangeType;
 
 struct TableType {
 	uint8_t   ElemType;
-	RangeType Limits;
+	RangeType Range;
 };
 
 struct GlobalType {
-	bool     Mut;
 	ValType  Type;
+	uint8_t  Mut;
 
     std::string str() const {
         std::string str("{type: ");
