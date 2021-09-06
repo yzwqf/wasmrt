@@ -313,8 +313,7 @@ std::vector<uint32_t> ModuleParser::readIndices(Module &M) {
     return std::move(Indices);
 }
 
-std::tuple<module::Expr, uint8_t>
-ModuleParser::readInstructions() {
+std::tuple<module::Expr, uint8_t> ModuleParser::readInstructions() {
     module::Expr Instructions;
     while (true) {
         auto opcode = readByte();
@@ -459,14 +458,30 @@ void ModuleParser::ReadExportSec(Module &M) {
 
 void ModuleParser::ReadElemSec(Module &M) {
     M.ElemSec.resize(readVarU32());
+    for (auto &Elem : M.ElemSec)
+        Elem = {readVarU32(), std::move(readExpr()), std::move(readIndices())};
 }
 
 void ModuleParser::ReadCodeSec(Module &M) {
-
+    uint64_t LocalLimit = (0x1 << (sizeof(uint32_t) << 3)) - 1;
+    M.CodeSec.resize(readVarU32());
+    for (auto &Code : M.CodeSec) {
+        auto ReamainingBeforeRead = remaining();
+        std::vector<module::Locals> LocalGroup(readVarU32());
+        for (auto &Locals : LocalGroup)
+            Locals = {readVarU32(), readValType()};
+        Code = {std::move(Locals), std::move(readExpr())};
+        if (remaining() + M.CodeSec.size() != ReamainingBeforeRead)
+            support::output::Error("ModuleParser::ReadCodeSec", "Invalid code!");
+        if (Code.getLocalCount() == LocalLimit)
+            support::output::Error("ModuleParser::ReadCodeSec", "too many locals!");
+    }
 }
 
 void ModuleParser::ReadDataSec(Module &M) {
-
+    M.DataSec.resize(readVarU32());
+    for (auto &Data : M.DataSec)
+        Data = {readVarU32(), std::move(readExpr()), std::move(readBytes())};
 }
 
 void ModuleParser::ReadNonCustomSec(uint8_t SecID, Module &M) {

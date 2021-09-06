@@ -114,7 +114,19 @@ struct Locals {
 };
 
 struct Code {
-	std::vector<Locals>  Locals;
+	uint64_t getLocalCount() const {
+		uint64_t Prev = 0, Cur;
+		uint64_t LocalLimit = (0x1 << (sizeof(uint32_t) << 3)) - 1;
+		for (auto &Locals : LocalGroup) {
+			Cur = Prev + Locals.Number;
+			if (Cur < Prev || Cur > LocalLimit)
+				return 0x1 << (sizeof(uint32_t) << 3);
+			Prev = Cur;
+		}
+		return Cur;
+	}
+
+	std::vector<Locals>  LocalGroup;
 	Expr                 Expr;
 };
 
