@@ -486,17 +486,17 @@ void ModuleParser::ReadDataSec(Module &M) {
 
 void ModuleParser::ReadNonCustomSec(uint8_t SecID, Module &M) {
     switch (SecID) {
-        case SecTypeID:     ReadTypeSec(M); break;
-        case SecImportID:   ReadImportSec(M); break;
-        case SecFuncID:     M.FuncSec = std::move(readIndices()); break;
-        case SecTableID:    ReadTableSec(M); break;
-        case SecMemID:      ReadMemSec(M); break;
-        case SecGlobalID:   ReadGlobalSec(M); break;
-        case SecExportID:   ReadExportSec(M); break;
-        case SecStartID:    M.StartSec = readVarU32(); break;
-        case SecElemID:     ReadElemSec(M); break;
-        case SecCodeID:     ReadCodeSec(M); break;
-        case SecDataID:     ReadDataSec(M); break;
+        case module::SecTypeID:     ReadTypeSec(M); break;
+        case module::SecImportID:   ReadImportSec(M); break;
+        case module::SecFuncID:     M.FuncSec = std::move(readIndices()); break;
+        case module::SecTableID:    ReadTableSec(M); break;
+        case module::SecMemID:      ReadMemSec(M); break;
+        case module::SecGlobalID:   ReadGlobalSec(M); break;
+        case module::SecExportID:   ReadExportSec(M); break;
+        case module::SecStartID:    M.StartSec = readVarU32(); break;
+        case module::SecElemID:     ReadElemSec(M); break;
+        case module::SecCodeID:     ReadCodeSec(M); break;
+        case module::SecDataID:     ReadDataSec(M); break;
         default:
             support::output::Error("ModuleParser::ReadNonCustomSec", "Unexpected Section ID: %d", SecID);
     }
